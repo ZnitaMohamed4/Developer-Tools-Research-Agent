@@ -173,7 +173,3 @@ src/
 - python-dotenv
 
 ---
-
-## License
-
-MIT (or specify your license)
