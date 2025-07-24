@@ -155,50 +155,6 @@ class Workflow:
     return {"companies": companies}  # Note: Fixed typo "comapanies" -> "companies"
 
 
-  def _extract_tools_step(self, state: ResearchState) -> Dict[str, Any]:
-    print(f" Finding articles about: {state.query}")
-
-    articles_query = f"{state.query} tools comparaison best alternatives"
-    
-    try:
-        search_results = self.firecrawl.search_companies(articles_query, num_results=3)
-        
-        all_content = ""
-        for result in search_results.data:
-            url = result.get("url", "")
-            try:
-                scraped = self.firecrawl.scrape_company_page(url)
-                if scraped:
-                    all_content += scraped.markdown[:1500] + "\n\n"
-            except Exception as scrape_error:
-                print(f"Error scraping {url}: {scrape_error}")
-                continue
-
-        if not all_content:
-            print("⚠️ No content extracted, using fallback approach")
-            return {"extracted_tools": ["Firebase", "Supabase", "AWS Amplify", "Appwrite"]}
-
-        messages = [
-            SystemMessage(content=self.prompts.TOOL_EXTRACTION_SYSTEM),
-            HumanMessage(content=self.prompts.tool_extraction_user(state.query, all_content))
-        ]
-
-        try:
-            response = self.llm.invoke(messages)
-            tool_names = [name.strip() for name in response.content.strip().split("\n") if name.strip()]
-            print(f"Extracted tools: {', '.join(tool_names[:5])}")
-            return {"extracted_tools": tool_names}
-        except Exception as e:
-            print(f"Error extracting tools: {e}")
-            return {"extracted_tools": ["Firebase", "Supabase", "AWS Amplify", "Appwrite"]}
-            
-    except Exception as e:
-        print(f"Error in search: {e}")
-        # Fallback with common alternatives
-        return {"extracted_tools": ["Firebase", "Supabase", "AWS Amplify", "Appwrite"]}
-  
-
-
   def _analyze_step(self, state:ResearchState) -> Dict[str, Any]:
 
     print("🪄 Generating recommendations")
